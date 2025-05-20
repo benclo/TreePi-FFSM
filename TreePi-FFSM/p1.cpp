@@ -102,7 +102,7 @@ bool processInput(vector<GraphFFSM*>& graph_list, int& ms) {
     return true;
 }
 // Function to generate connected graphs with numeric labels and write to a file
-void generateChemicalGraphsFFSM(int minSupport = 1, int numGraphs = 250, int numVertices = 13, int numEdges = 15) {
+void generateChemicalGraphsFFSM(int minSupport = 1, int numGraphs = 5, int numVertices = 15, int numEdges = 17) {
     mt19937 rng(static_cast<unsigned>(time(0)));  // Random number generator
     uniform_int_distribution<int> vertexDist(0, numVertices - 1);  // Vertex selection
     uniform_int_distribution<int> nodeLabelDist(0, 3);  // Numeric node labels {0, 1, 2, 3}
@@ -195,9 +195,7 @@ unordered_map<Graph, int, GraphHasher> FFSM() {
   }
   */
   Runner test_runner(graph_ptrs, minsup);
-  cout << "Here1";
   test_runner.run();
-  cout << "Here2";
   test_runner.displayOutput(freqTrees);
 
   for (int i = 0; i < n; i++) {

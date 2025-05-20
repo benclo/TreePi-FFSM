@@ -159,7 +159,7 @@ void Runner::displayOutput(unordered_map<Graph, int, GraphHasher> &freqTrees) co
     if (it->getUniqFrequency() >= minsup && it->size() > 1) {
       Graph g = it->toGraph();
       freqTrees.insert({ g, it->getUniqFrequency() });
-      cout << g.encode() << endl;
+      // cout << g.encode() << endl;
     }
   }
 }

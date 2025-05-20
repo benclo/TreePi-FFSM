@@ -17,6 +17,7 @@
 #include <ctime>
 #include <chrono>
 #include <tuple>
+#include <climits>
 #include "FFSM.h"
 
 using namespace std;
@@ -489,54 +490,9 @@ bool isFeatureTree(Index idx, BPlusTree<Index> BTree) {
         return false;
 }
 
-// Function to generate chemical graphs and write to a file
-void generateChemicalGraphs(int numGraphs = 10, int numVertices = 10, int numEdges = 11) {
-    // Initialize random number generator
-    mt19937 rng(static_cast<unsigned>(time(0))); // Seed with current time
-    uniform_int_distribution<int> vertexDist(1, numVertices);
-    uniform_int_distribution<int> labelDist(1, 3); // For vertex labels '1', '2', '3'
-    uniform_int_distribution<int> edgeLabelDist(0, 2); // For edge labels 'a', 'b', 'c'
-
-    // Open the output file
-    ofstream outFile("graph.txt");
-
-    // Generate the graphs
-    for (int g = 0; g < numGraphs; ++g) {
-        // Vertex labels: Randomly assign 1, 2, or 3 to each vertex (vertex names are from 1 to numVertices)
-        vector<int> vertices(numVertices);
-        for (int i = 0; i < numVertices; ++i) {
-            vertices[i] = labelDist(rng); // Labels are randomly chosen from {1, 2, 3}
-        }
-
-        // Generate edges: Directed edges with cycles, but no loops
-        vector<tuple<int, int, string>> edges;
-        for (int i = 0; i < numEdges; ++i) {
-            int v1 = vertexDist(rng);
-            int v2 = vertexDist(rng);
-
-            // Prevent loops (no edge from a vertex to itself)
-            while (v1 == v2) {
-                v2 = vertexDist(rng);
-            }
-
-            string label = (edgeLabelDist(rng) == 0) ? "a" : (edgeLabelDist(rng) == 1) ? "b" : "c";
-            edges.push_back(make_tuple(v1, v2, label));
-        }
-
-        // Write graph details to the file
-        outFile << "g" << g + 1 << ":\n";
-        for (const auto& edge : edges) {
-            outFile << "edge " << get<0>(edge) << " " << get<1>(edge) << " " << get<2>(edge) << "\n";
-        }
-        for (int i = 0; i < numVertices; ++i) {
-            outFile << "vertex " << i + 1 << " " << vertices[i] << "\n";  // Vertex names are from 1 to numVertices
-        }
-        outFile << "end\n";
-    }
-
-    // Close the output file
-    outFile.close();
-    cout << "Number of graphs: " << numGraphs << " Number of vertices: " << numVertices << " Number of edges: " << numEdges << endl;
+bool isTree(const Graph& subgraph)
+{
+    return isAcyclic(subgraph) && isConnected(subgraph);
 }
 
 int main() {
@@ -555,6 +511,36 @@ int main() {
     unordered_map<Graph, int, GraphHasher> subtreeFrequency = FFSM();
     end = chrono::system_clock::now();
 
+    unordered_set<string> canonicalForms;
+    int duplicateCount = 0;
+
+    for (const auto& pair : subtreeFrequency) {
+        const Graph& g = pair.first;
+
+        // Wrap graph in Index to get canonical form
+        Index idx(g);
+        string canonical = idx.constructCanonicalForm();
+
+        // Check for duplicates
+        if (canonicalForms.find(canonical) != canonicalForms.end()) {
+            duplicateCount++;
+        }
+        else {
+            canonicalForms.insert(canonical);
+        }
+        
+        bool b = isConnected(g) && isAcyclic(g);
+
+        if (b == false)
+            cout << b << endl;
+    }
+
+    cout << "Total mined trees: " << subtreeFrequency.size() << endl;
+    cout << "Unique canonical trees: " << canonicalForms.size() << endl;
+    cout << "Duplicate trees: " << duplicateCount << endl;
+
+    cout << subtreeFrequency.size() << endl;
+
     duration<double> elapsed_seconds = end - start;
 
     cout << "Tree mining time:" << elapsed_seconds.count() << endl;
@@ -569,9 +555,12 @@ int main() {
     calculateAlphaBetaEta(sq, database, alpha, eta);
 
     vector<Graph> freqTrees = filterTreesBySupport(subtreeFrequency, alpha, beta, eta); // Filter trees based on support function
+    cout << "Freq tree size:" << freqTrees.size() << endl;
 
     double gamma = 2;
     vector<Graph> finalTrees = shrinkTrees(freqTrees, subtreeFrequency, gamma); // Shrink the trees based on intersection
+
+    cout << "Final tree size:" << finalTrees.size() << endl;
 
     start = chrono::system_clock::now();
 
